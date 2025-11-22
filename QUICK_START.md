@@ -12,8 +12,8 @@
 ### 2. Подключите репозиторий
 
 ```bash
-# Замените YOUR_USERNAME на ваш GitHub username
-git remote add origin https://github.com/YOUR_USERNAME/tunnel-server.git
+# Замените mebelsalskarhiv на ваш GitHub username
+git remote add origin https://github.com/mebelsalskarhiv/tunnel-server.git
 ```
 
 ### 3. Отправьте код
@@ -57,7 +57,7 @@ GitHub больше не принимает пароли. Используйте
 
 3. Используйте SSH URL:
    ```bash
-   git remote set-url origin git@github.com:YOUR_USERNAME/tunnel-server.git
+   git remote set-url origin git@github.com:mebelsalskarhiv/tunnel-server.git
    ```
 
 ## Проверка

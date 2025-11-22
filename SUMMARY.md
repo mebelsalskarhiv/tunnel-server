@@ -70,7 +70,7 @@ git commit -m "Initial commit: Tunnel Server v1.0.0"
 
 ### 4. Отправка на GitHub
 ```bash
-git remote add origin https://github.com/YOUR_USERNAME/tunnel-server.git
+git remote add origin https://github.com/mebelsalskarhiv/tunnel-server.git
 git push -u origin master
 ```
 

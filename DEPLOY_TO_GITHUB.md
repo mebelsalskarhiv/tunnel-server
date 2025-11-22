@@ -32,8 +32,8 @@ git commit -m "Initial commit: Tunnel Server v1.0.0"
 ## Шаг 4: Подключение к GitHub
 
 ```bash
-# Замените YOUR_USERNAME на ваш GitHub username
-git remote add origin https://github.com/YOUR_USERNAME/tunnel-server.git
+# Замените mebelsalskarhiv на ваш GitHub username
+git remote add origin https://github.com/mebelsalskarhiv/tunnel-server.git
 
 # Проверьте подключение
 git remote -v
@@ -62,7 +62,7 @@ git push -u origin master
 
 ```bash
 # Измените URL на SSH
-git remote set-url origin git@github.com:YOUR_USERNAME/tunnel-server.git
+git remote set-url origin git@github.com:mebelsalskarhiv/tunnel-server.git
 
 # Отправляем код
 git push -u origin master

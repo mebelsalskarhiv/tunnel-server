@@ -57,11 +57,11 @@ git commit -m "Initial commit: Tunnel Server v1.0.0
 ### 5. Подключение к GitHub
 
 ```bash
-# Добавляем remote (замените YOUR_USERNAME на ваш GitHub username)
-git remote add origin https://github.com/YOUR_USERNAME/tunnel-server.git
+# Добавляем remote (замените mebelsalskarhiv на ваш GitHub username)
+git remote add origin https://github.com/mebelsalskarhiv/tunnel-server.git
 
 # Или если используете SSH:
-# git remote add origin git@github.com:YOUR_USERNAME/tunnel-server.git
+# git remote add origin git@github.com:mebelsalskarhiv/tunnel-server.git
 
 # Проверяем remote
 git remote -v
