@@ -1,0 +1,14 @@
+# Домен вашего сервера
+DOMAIN=your-domain.com
+
+# Email для Let's Encrypt
+LETSENCRYPT_EMAIL=your-email@your-domain.com
+
+# Basic auth для Traefik dashboard (user:password)
+# Сгенерируйте с помощью: echo $(htpasswd -nB user) | tr -d '\n'
+TRAEFIK_AUTH=user:$$2y$$05$$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+# Настройки сервера туннелей
+TUNNEL_CONTROL_PORT=8080
+TUNNEL_PROXY_PORT=8081
+TUNNEL_WEB_PORT=8082

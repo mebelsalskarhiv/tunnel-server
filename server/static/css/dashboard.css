@@ -1,0 +1,41 @@
+.quick-stats {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px;
+    padding: 2rem;
+}
+
+.stat-number {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    font-size: 1rem;
+    opacity: 0.9;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.activity-item {
+    border-left: 3px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.activity-item:hover {
+    border-left-color: var(--primary-color);
+    background-color: #f8fafc;
+}
+
+.activity-success {
+    border-left-color: var(--success-color);
+}
+
+.activity-warning {
+    border-left-color: var(--warning-color);
+}
+
+.activity-danger {
+    border-left-color: var(--danger-color);
+}

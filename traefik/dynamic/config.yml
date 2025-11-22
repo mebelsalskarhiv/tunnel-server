@@ -1,0 +1,32 @@
+http:
+  middlewares:
+    compress:
+      compress: {}
+
+    security-headers:
+      headers:
+        frameDeny: true
+        sslRedirect: true
+        browserXssFilter: true
+        contentTypeNosniff: true
+        forceSTSHeader: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 31536000
+
+tcp:
+  routers:
+    tunnel-control:
+      entryPoints:
+        - "tunnel-control"
+      rule: "HostSNI(`*`)"
+      service: "tunnel-control"
+
+  services:
+    tunnel-control:
+      loadBalancer:
+        servers:
+          - address: "tunnel-server:8080"
+
+# Динамические конфигурации для туннелей будут создаваться автоматически
+# в отдельных файлах в этой директории

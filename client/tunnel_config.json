@@ -1,0 +1,21 @@
+{
+  "server": {
+    "host": "localhost",
+    "control_port": 2222,
+    "proxy_port": 2223,
+    "domain": "localhost"
+  },
+  "client": {
+    "id": "809812d4",
+    "name": "vasil",
+    "token": "5iFD4GTE8eFf0KWTio9YPL_4y9Ujp0cnsom-ft30lQo"
+  },
+  "tunnels": [
+    {
+      "subdomain": "myapp",
+      "local_port": 3000,
+      "local_host": "localhost",
+      "protocol": "http"
+    }
+  ]
+}
