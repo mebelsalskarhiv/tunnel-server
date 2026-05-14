@@ -1,12 +1,39 @@
+```
 # Python
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
+*.pyc
+*.pyo
+*.pyd
 .Python
 env/
 venv/
+.venv/
+.ENV
+.ENV.*
+.venv/
+venv/
 ENV/
+.env
+.env.*
+.env.local
+.python-version
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.git/
+.mypy_cache/
+.pytest_cache/
+.hypothesis/
+
+# Distribution / packaging
+.Python
 build/
 develop-eggs/
 dist/
@@ -23,40 +50,18 @@ wheels/
 .installed.cfg
 *.egg
 
-# Database
-*.db
-*.sqlite
-*.sqlite3
-
-# Environment variables
-.env
-.env.local
-
-# IDE
+# IDEs
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
-
-# Docker
-.dockerignore
-
-# Data
-data/tunnel.db
-data/letsencrypt/acme.json
-
-# Logs
-*.log
-logs/
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Traefik dynamic configs (генерируются автоматически)
-traefik/dynamic/tunnel-*.yml
-
-# Test files
-test-webapp/
-
+# Environment
+.env
+.env.local
+.env.*
+```
