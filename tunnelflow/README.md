@@ -1,239 +1,198 @@
-# TunnelFlow - Professional Tunneling Platform v2.0
+# TunnelFlow v2.0
 
-## 📋 Overview
+Secure HTTP/HTTPS tunneling service with billing, monitoring, and client management.
 
-**TunnelFlow** is a modern tunneling platform (like ngrok) with billing, monitoring, and user-friendly client packages.
+## 🚀 Features
 
-### Key Features
-- ✅ HTTP/HTTPS tunnels via custom domains and server subdomains
-- ✅ Billing system with 5 tariff plans (Free to Enterprise)
-- ✅ Real-time monitoring dashboard for admins and users
-- ✅ Auto-generated client packages (.bat/.sh scripts)
-- ✅ JWT authentication and token hashing
-- ✅ PostgreSQL + Redis for data and metrics
-- ✅ FastAPI backend + React frontend ready
+- **HTTP/HTTPS Tunnels** - Secure tunneling via subdomains and custom domains
+- **Billing System** - Multi-tier subscription plans with usage tracking
+- **Real-time Monitoring** - Live dashboards for users and administrators
+- **Client Packages** - Auto-generated ZIP packages with run scripts
+- **JWT Authentication** - Secure user authentication and authorization
+- **Auto-reconnect** - Client-side exponential backoff reconnection
 
----
+## 📦 Installation
+
+### Prerequisites
+- Python 3.9+
+- PostgreSQL 14+
+- Redis 7+
+
+### Setup
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Configure environment variables
+cp .env.example .env
+# Edit .env with your settings
+
+# Initialize database
+python -m tunnelflow.db.database
+
+# Run server
+python -m tunnelflow.main
+```
 
 ## 🏗️ Architecture
 
 ```
 tunnelflow/
 ├── main.py                 # FastAPI application entry point
-├── core/                   # Core tunneling logic
-├── api/                    # REST API endpoints
-│   ├── routes/
-│   │   ├── auth.py        # Registration, login, JWT
-│   │   ├── billing.py     # Plans, invoices, payments
-│   │   └── stats.py       # Real-time metrics
-│   └── middleware/         # Auth, rate limiting
-├── db/                     # Database layer
-│   ├── models.py          # SQLAlchemy ORM models
-│   └── database.py        # DB connection management
-├── billing/                # Billing system
-│   └── plans.py           # Tariff plans and limits
-├── monitoring/             # Monitoring & metrics
-│   └── metrics.py         # Real-time stats collection
-├── client_generator/       # Client package generator
-│   └── packager.py        # ZIP package creation
-└── config/                 # Configuration files
+├── api/
+│   └── routes/
+│       ├── auth.py         # Authentication endpoints
+│       ├── billing.py      # Billing & subscriptions
+│       ├── stats.py        # Statistics & monitoring
+│       └── tunnels.py      # Tunnel management
+├── core/
+│   ├── tunnel_manager.py   # Tunnel lifecycle management
+│   ├── websocket_handler.py # WebSocket connections
+│   └── http_proxy.py       # HTTP request routing
+├── db/
+│   ├── models.py           # SQLAlchemy ORM models
+│   └── database.py         # Database connection
+├── billing/
+│   └── plans.py            # Subscription plans & limits
+├── monitoring/
+│   └── metrics.py          # Real-time metrics collection
+├── client_generator/
+│   └── packager.py         # Client package generator
+└── client/
+    ├── client.py           # Tunnel client
+    ├── run.bat             # Windows launcher
+    └── run.sh              # Linux/macOS launcher
 ```
 
----
+## 💰 Subscription Plans
 
-## 💰 Tariff Plans
-
-| Plan | Price | Tunnels | Traffic/Month | Custom Domains | Subdomains |
-|------|-------|---------|---------------|----------------|------------|
-| **Free** | $0 | 1 | 1 GB | 0 | 1 |
-| **Starter** | $5 | 3 | 20 GB | 1 | 3 |
-| **Pro** | $15 | 10 | 100 GB | 5 | 10 |
-| **Business** | $50 | 50 | 500 GB | 20 | 50 |
-| **Enterprise** | Custom | Unlimited | Unlimited | Unlimited | Unlimited |
-
----
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Python 3.11+
-- PostgreSQL 15+
-- Redis 7+
-
-### Installation
-
-```bash
-# Clone repository
-cd /workspace/tunnelflow
-
-# Install dependencies
-pip install fastapi uvicorn sqlalchemy psycopg2-binary redis pyjwt python-multipart
-
-# Set environment variables
-export DATABASE_URL="postgresql://user:password@localhost:5432/tunnelflow"
-export REDIS_HOST="localhost"
-export SECRET_KEY="your-secret-key-here"
-
-# Run the server
-python -m tunnelflow.main
-```
-
-### API Documentation
-
-After starting the server, access:
-- Swagger UI: http://localhost:8000/api/docs
-- ReDoc: http://localhost:8000/api/redoc
-- Health check: http://localhost:8000/health
-
----
-
-## 📦 Client Package Generator
-
-Generate ready-to-use client packages for users:
-
-```python
-from tunnelflow.client_generator.packager import ClientPackageGenerator
-
-generator = ClientPackageGenerator(
-    base_domain="tunnelflow.io",
-    server_host="tunnel.tunnelflow.io"
-)
-
-zip_path = generator.generate_package(
-    tunnel_id=123,
-    tunnel_name="My App",
-    token="secret-token",
-    local_port=8080,
-    subdomain="myapp",
-    output_dir="./packages",
-    platform="all",  # windows, linux, macos, all
-    include_client_binary=True,
-)
-
-print(f"Package created: {zip_path}")
-```
-
-### Inside the Package
-- `tunnel_client.exe` - Client binary
-- `config.json` - Pre-configured settings
-- `run.bat` / `run.sh` - Launch script with menu
-- `README.txt` - User instructions
-
----
+| Plan | Price | Tunnels | Traffic | Custom Domains |
+|------|-------|---------|---------|----------------|
+| Free | $0 | 1 | 1 GB/mo | 0 |
+| Starter | $5/mo | 3 | 20 GB/mo | 1 |
+| Pro | $15/mo | 10 | 100 GB/mo | 5 |
+| Business | $50/mo | 50 | 500 GB/mo | 20 |
+| Enterprise | Custom | Unlimited | Unlimited | Unlimited |
 
 ## 🔌 API Endpoints
 
 ### Authentication
-- `POST /api/v1/auth/register` - Register new user
-- `POST /api/v1/auth/login` - Login (returns JWT)
-- `GET /api/v1/auth/me` - Get current user profile
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - Login and get JWT token
+- `GET /api/auth/me` - Get current user profile
+
+### Tunnels
+- `GET /api/tunnels` - List user's tunnels
+- `POST /api/tunnels` - Create new tunnel
+- `GET /api/tunnels/{id}` - Get tunnel details
+- `DELETE /api/tunnels/{id}` - Delete tunnel
+- `POST /api/tunnels/{id}/regenerate-token` - Regenerate auth token
+- `GET /api/tunnels/{id}/stats` - Get tunnel statistics
 
 ### Billing
-- `GET /api/v1/billing/plans` - List available plans
-- `GET /api/v1/billing/my-plan` - Get current plan & usage
-- `GET /api/v1/billing/invoices` - Invoice history
-- `POST /api/v1/billing/invoices/{id}/pay` - Pay invoice
-- `POST /api/v1/billing/subscribe/{plan_id}` - Subscribe to plan
+- `GET /api/billing/plans` - List available plans
+- `GET /api/billing/subscription` - Get current subscription
+- `POST /api/billing/subscribe` - Subscribe to a plan
+- `GET /api/billing/invoices` - List invoices
+- `POST /api/billing/invoices/{id}/download` - Download invoice PDF
 
 ### Statistics
-- `GET /api/v1/stats/global` - Global platform stats (admin)
-- `GET /api/v1/stats/user/me` - User detailed stats
-- `GET /api/v1/stats/user/me/realtime` - Real-time user metrics
-- `GET /api/v1/stats/server/realtime` - Server real-time metrics
-- `GET /api/v1/stats/server/history` - Server metrics history
+- `GET /api/stats/user` - User's usage statistics
+- `GET /api/stats/server` - Server-wide statistics (admin)
+- `WS /ws/tunnel` - WebSocket endpoint for clients
 
----
+## 🖥️ Client Usage
+
+### Generate Client Package
+
+Via API:
+```bash
+curl -X POST http://localhost:8000/api/client/generate \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{"tunnel_id": "your-tunnel-id"}' \
+  --output tunnel-package.zip
+```
+
+### Run Client
+
+**Windows:**
+```cmd
+unzip tunnel-package.zip
+cd tunnel-package
+run.bat
+```
+
+**Linux/macOS:**
+```bash
+unzip tunnel-package.zip
+cd tunnel-package
+chmod +x run.sh
+./run.sh
+```
+
+### Manual Configuration
+
+Create `config.json`:
+```json
+{
+  "server_url": "https://tunnelflow.io",
+  "tunnel_id": "your-tunnel-id",
+  "client_token": "your-auth-token",
+  "local_host": "localhost",
+  "local_port": 8080,
+  "heartbeat_interval": 30
+}
+```
+
+Run:
+```bash
+python client.py --config config.json
+```
 
 ## 📊 Monitoring
 
-### Real-time Metrics (Redis)
-- Active connections
-- Requests per second (RPS)
-- Traffic (bytes in/out per second)
-- CPU/Memory usage
-- Online tunnels and users
+### User Dashboard
+- Real-time traffic graphs
+- Active connections count
+- Monthly usage vs limits
+- Tunnel status indicators
 
-### Historical Stats (PostgreSQL)
-- Daily traffic per user
-- Request counts
-- Top IPs
-- Tunnel usage patterns
-
----
+### Admin Dashboard
+- Server CPU/Memory usage
+- Total active tunnels
+- Network throughput
+- User activity heatmap
+- Revenue metrics
 
 ## 🔒 Security
 
-- JWT tokens for API authentication (30-day expiry)
-- Password hashing with SHA256 + salt
-- Tunnel token hashing (never stored in plain text)
-- Rate limiting (to be implemented)
-- HTTPS required in production
-
----
+- JWT-based authentication
+- Password hashing with bcrypt
+- Token regeneration capability
+- Rate limiting on API endpoints
+- HTTPS enforcement in production
 
 ## 🛠️ Development
 
-### Project Structure
-```
-/workspace/
-├── tunnelflow/          # New modular server (v2.0)
-├── server/              # Legacy server.py (v1.0)
-├── client/              # Legacy Python client
-├── docker-compose.yml   # Docker setup
-└── TUNNELFLOW_PLAN.md   # Full development plan
-```
-
-### Running Tests
 ```bash
-pytest tests/ -v
+# Run tests
+pytest
+
+# Code formatting
+black tunnelflow/
+
+# Linting
+flake8 tunnelflow/
+
+# Run with auto-reload
+uvicorn tunnelflow.main:app --reload
 ```
-
-### Docker Deployment
-```bash
-docker-compose up -d
-```
-
----
-
-## 📈 Roadmap
-
-### Phase 1: Foundation (Weeks 1-2) ✅
-- [x] Modular architecture
-- [x] Database models
-- [x] JWT authentication
-- [x] Billing system
-- [ ] Tunnel core logic
-
-### Phase 2: Dashboard (Weeks 3-4)
-- [ ] React frontend
-- [ ] User dashboard
-- [ ] Real-time charts
-- [ ] Domain management
-
-### Phase 3: Client (Week 5)
-- [ ] Go client implementation
-- [ ] Auto-reconnect logic
-- [ ] Service installation
-
-### Phase 4: Monitoring (Week 6)
-- [ ] Admin dashboard
-- [ ] Alert system
-- [ ] Prometheus integration
-
-### Phase 5: Polish (Week 7)
-- [ ] Load testing
-- [ ] Documentation
-- [ ] CI/CD pipeline
-- [ ] Production deployment
-
----
 
 ## 📝 License
 
-MIT License - See LICENSE file for details
+MIT License - See LICENSE file for details.
 
----
+## 🤝 Support
 
-**Version:** 2.0.0  
-**Status:** In Development  
-**Contact:** support@tunnelflow.io
+For issues and feature requests, please open an issue on GitHub.
