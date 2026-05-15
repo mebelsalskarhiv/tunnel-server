@@ -7,12 +7,12 @@ from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
 
-from ..db.database import get_db_session
-from ..db.models import User, Tunnel, UsageLog
-from ..core.tunnel_manager import tunnel_manager
-from .auth import get_current_user, TokenData
+from tunnelflow.db.database import get_db
+from tunnelflow.db.models import User, Tunnel, UsageLog
+from tunnelflow.core.tunnel_manager import tunnel_manager
+from tunnelflow.api.routes.auth import get_current_user
 
-router = APIRouter(prefix="/api/tunnels", tags=["tunnels"])
+router = APIRouter(prefix="/tunnels", tags=["tunnels"])
 
 
 class TunnelCreate(BaseModel):
@@ -40,16 +40,16 @@ class TunnelResponse(BaseModel):
 
 @router.get("", response_model=List[TunnelResponse])
 async def list_tunnels(
-    current_user: TokenData = Depends(get_current_user),
-    db = Depends(get_db_session)
+    current_user = Depends(get_current_user),
+    db = Depends(get_db)
 ):
     """Get all tunnels for the current user"""
-    tunnels = tunnel_manager.get_user_tunnels(current_user.user_id)
+    tunnels = tunnel_manager.get_user_tunnels(current_user.id)
     
     # If no tunnels in memory, fetch from database
     if not tunnels:
         db_tunnels = db.query(Tunnel).filter(
-            Tunnel.user_id == current_user.user_id
+            Tunnel.user_id == current_user.id
         ).all()
         
         # Sync with tunnel manager
@@ -60,7 +60,7 @@ async def list_tunnels(
                 if not tunnel:
                     continue
         
-        tunnels = tunnel_manager.get_user_tunnels(current_user.user_id)
+        tunnels = tunnel_manager.get_user_tunnels(current_user.id)
     
     return tunnels
 
@@ -68,17 +68,17 @@ async def list_tunnels(
 @router.post("", response_model=TunnelResponse, status_code=status.HTTP_201_CREATED)
 async def create_tunnel(
     tunnel_data: TunnelCreate,
-    current_user: TokenData = Depends(get_current_user),
-    db = Depends(get_db_session)
+    current_user = Depends(get_current_user),
+    db = Depends(get_db)
 ):
     """Create a new tunnel"""
     # Check user's plan limits
-    user = db.query(User).filter(User.id == current_user.user_id).first()
+    user = db.query(User).filter(User.id == current_user.id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    plan = user.plan
-    user_tunnel_count = len(tunnel_manager.get_user_tunnels(current_user.user_id))
+    plan = get_user_plan(db, current_user.id)
+    user_tunnel_count = len(tunnel_manager.get_user_tunnels(current_user.id))
     
     if user_tunnel_count >= plan.max_tunnels:
         raise HTTPException(
@@ -96,7 +96,7 @@ async def create_tunnel(
     try:
         # Create tunnel in tunnel manager
         tunnel = await tunnel_manager.create_tunnel(
-            user_id=current_user.user_id,
+            user_id=current_user.id,
             subdomain=tunnel_data.subdomain,
             custom_domain=tunnel_data.custom_domain,
             target_port=tunnel_data.target_port,
@@ -106,12 +106,12 @@ async def create_tunnel(
         # Save to database
         db_tunnel = Tunnel(
             id=tunnel.id,
-            user_id=current_user.user_id,
+            user_id=current_user.id,
             subdomain=tunnel_data.subdomain,
             custom_domain=tunnel_data.custom_domain,
             target_port=tunnel_data.target_port,
             protocol=tunnel_data.protocol,
-            token=tunnel.id  # Use tunnel ID as token for simplicity
+            token_hash=tunnel.id  # Use tunnel ID as token for simplicity
         )
         db.add(db_tunnel)
         db.commit()
@@ -119,10 +119,12 @@ async def create_tunnel(
         
         # Log creation
         usage_log = UsageLog(
-            user_id=current_user.user_id,
+            user_id=current_user.id,
             tunnel_id=tunnel.id,
-            action="tunnel_created",
-            details={"subdomain": tunnel_data.subdomain}
+            bytes_in=0,
+            bytes_out=0,
+            requests_count=0,
+            started_at=datetime.utcnow()
         )
         db.add(usage_log)
         db.commit()
@@ -136,8 +138,8 @@ async def create_tunnel(
 @router.get("/{tunnel_id}", response_model=TunnelResponse)
 async def get_tunnel(
     tunnel_id: str,
-    current_user: TokenData = Depends(get_current_user),
-    db = Depends(get_db_session)
+    current_user = Depends(get_current_user),
+    db = Depends(get_db)
 ):
     """Get a specific tunnel by ID"""
     tunnel = tunnel_manager.tunnels.get(tunnel_id)
@@ -146,7 +148,7 @@ async def get_tunnel(
         # Try database
         db_tunnel = db.query(Tunnel).filter(
             Tunnel.id == tunnel_id,
-            Tunnel.user_id == current_user.user_id
+            Tunnel.user_id == current_user.id
         ).first()
         
         if not db_tunnel:
@@ -154,7 +156,7 @@ async def get_tunnel(
         
         raise HTTPException(status_code=404, detail="Tunnel exists but is not active")
     
-    if tunnel.user_id != current_user.user_id:
+    if tunnel.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
     
     return tunnel
@@ -163,8 +165,8 @@ async def get_tunnel(
 @router.delete("/{tunnel_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_tunnel(
     tunnel_id: str,
-    current_user: TokenData = Depends(get_current_user),
-    db = Depends(get_db_session)
+    current_user = Depends(get_current_user),
+    db = Depends(get_db)
 ):
     """Delete a tunnel"""
     tunnel = tunnel_manager.tunnels.get(tunnel_id)
@@ -172,7 +174,7 @@ async def delete_tunnel(
     if not tunnel:
         db_tunnel = db.query(Tunnel).filter(
             Tunnel.id == tunnel_id,
-            Tunnel.user_id == current_user.user_id
+            Tunnel.user_id == current_user.id
         ).first()
         
         if not db_tunnel:
@@ -183,7 +185,7 @@ async def delete_tunnel(
         db.commit()
         return
     
-    if tunnel.user_id != current_user.user_id:
+    if tunnel.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
     
     # Delete from tunnel manager (this will close all connections)
@@ -197,9 +199,12 @@ async def delete_tunnel(
     
     # Log deletion
     usage_log = UsageLog(
-        user_id=current_user.user_id,
+        user_id=current_user.id,
         tunnel_id=tunnel_id,
-        action="tunnel_deleted"
+        bytes_in=0,
+        bytes_out=0,
+        requests_count=0,
+        started_at=datetime.utcnow()
     )
     db.add(usage_log)
     db.commit()
@@ -208,13 +213,13 @@ async def delete_tunnel(
 @router.post("/{tunnel_id}/regenerate-token")
 async def regenerate_token(
     tunnel_id: str,
-    current_user: TokenData = Depends(get_current_user),
-    db = Depends(get_db_session)
+    current_user = Depends(get_current_user),
+    db = Depends(get_db)
 ):
     """Regenerate tunnel authentication token"""
     tunnel = tunnel_manager.tunnels.get(tunnel_id)
     
-    if not tunnel or tunnel.user_id != current_user.user_id:
+    if not tunnel or tunnel.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Tunnel not found")
     
     # Generate new token
@@ -224,14 +229,17 @@ async def regenerate_token(
     # Update in database
     db_tunnel = db.query(Tunnel).filter(Tunnel.id == tunnel_id).first()
     if db_tunnel:
-        db_tunnel.token = new_token
+        db_tunnel.token_hash = new_token
         db.commit()
     
     # Log regeneration
     usage_log = UsageLog(
-        user_id=current_user.user_id,
+        user_id=current_user.id,
         tunnel_id=tunnel_id,
-        action="token_regenerated"
+        bytes_in=0,
+        bytes_out=0,
+        requests_count=0,
+        started_at=datetime.utcnow()
     )
     db.add(usage_log)
     db.commit()
@@ -242,13 +250,13 @@ async def regenerate_token(
 @router.get("/{tunnel_id}/stats")
 async def get_tunnel_stats(
     tunnel_id: str,
-    current_user: TokenData = Depends(get_current_user),
-    db = Depends(get_db_session)
+    current_user = Depends(get_current_user),
+    db = Depends(get_db)
 ):
     """Get statistics for a specific tunnel"""
     tunnel = tunnel_manager.tunnels.get(tunnel_id)
     
-    if not tunnel or tunnel.user_id != current_user.user_id:
+    if not tunnel or tunnel.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Tunnel not found")
     
     # Get stats from tunnel
@@ -259,7 +267,7 @@ async def get_tunnel_stats(
     # Get historical stats from database
     logs = db.query(UsageLog).filter(
         UsageLog.tunnel_id == tunnel_id
-    ).order_by(UsageLog.timestamp.desc()).limit(100).all()
+    ).order_by(UsageLog.created_at.desc()).limit(100).all()
     
     return {
         "tunnel_id": tunnel_id,
@@ -272,9 +280,10 @@ async def get_tunnel_stats(
         },
         "recent_activity": [
             {
-                "timestamp": log.timestamp,
-                "action": log.action,
-                "details": log.details
+                "timestamp": log.created_at,
+                "bytes_in": log.bytes_in,
+                "bytes_out": log.bytes_out,
+                "requests": log.requests_count
             }
             for log in logs
         ]

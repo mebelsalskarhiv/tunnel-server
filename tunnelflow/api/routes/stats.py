@@ -8,10 +8,10 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 import redis
 
-from ..db.database import get_db
-from ..db.models import User
-from ..monitoring.metrics import MetricsCollector, StatsService, ServerMetrics
-from ..api.routes.auth import get_current_user
+from tunnelflow.db.database import get_db
+from tunnelflow.db.models import User
+from tunnelflow.monitoring.metrics import MetricsCollector, StatsService, ServerMetrics
+from tunnelflow.api.routes.auth import get_current_user
 
 router = APIRouter(prefix="/stats", tags=["Statistics"])
 

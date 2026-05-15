@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 
 from .db.database import init_database
 from .billing.plans import initialize_plans
-from .api.routes import auth, billing, stats
+from .api.routes import auth, billing, stats, tunnels
 
 
 # Конфигурация из переменных окружения
@@ -71,6 +71,7 @@ def create_app() -> FastAPI:
     app.include_router(auth.router, prefix="/api/v1")
     app.include_router(billing.router, prefix="/api/v1")
     app.include_router(stats.router, prefix="/api/v1")
+    app.include_router(tunnels.router, prefix="/api/v1")
     
     # Health check endpoint
     @app.get("/health")
