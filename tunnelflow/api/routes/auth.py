@@ -13,9 +13,9 @@ import jwt
 import hashlib
 import secrets
 
-from ..db.database import get_db
-from ..db.models import User
-from ..billing.plans import initialize_plans, get_user_plan, get_user_limits, get_current_usage
+from tunnelflow.db.database import get_db
+from tunnelflow.db.models import User
+from tunnelflow.billing.plans import initialize_plans, get_user_plan, get_user_limits, get_current_usage
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 

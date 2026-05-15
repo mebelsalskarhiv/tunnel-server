@@ -11,60 +11,93 @@ services:
       - --providers.file.watch=true
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
-      - --entrypoints.tunnel-control.address=:2222
-      - --certificatesresolvers.letsencrypt.acme.tlschallenge=true
-      - --certificatesresolvers.letsencrypt.acme.email=${LETSENCRYPT_EMAIL:-your-email@example.com}
-      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+      - --entrypoints.tunnel-ws.address=:2222
     ports:
       - "80:80"
       - "443:443"
       - "2222:2222"
-      - "8080:8080"
+      - "8081:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik/dynamic:/etc/traefik/dynamic:ro
-      - ./data/letsencrypt:/letsencrypt
     networks:
       - tunnel-network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.localhost`)"
+      - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.${DOMAIN:-localhost}`)"
       - "traefik.http.routers.traefik-dashboard.entrypoints=web"
       - "traefik.http.routers.traefik-dashboard.service=api@internal"
 
-  tunnel-server:
-    build: ./server
-    container_name: tunnel-server
+  db:
+    image: postgres:15-alpine
+    container_name: tunnelflow-db
     environment:
-      - TUNNEL_DOMAIN=${DOMAIN:-localhost}
-      - TUNNEL_CONTROL_PORT=8080
-      - TUNNEL_PROXY_PORT=8081
-      - TUNNEL_WEB_PORT=8082
-      - DATABASE_URL=sqlite:///data/tunnel.db
-      - TRAEFIK_DYNAMIC_CONFIG_DIR=/app/traefik-configs
-      - ENABLE_SSL=${ENABLE_SSL:-false}
+      POSTGRES_DB: tunnelflow
+      POSTGRES_USER: tunnelflow
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-tunnelflow}
     volumes:
-      - ./data:/app/data
-      - ./traefik/dynamic:/app/traefik-configs
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - tunnel-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tunnelflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: tunnelflow-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - tunnel-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  tunnelflow-api:
+    build:
+      context: ./tunnelflow
+      dockerfile: Dockerfile
+    container_name: tunnelflow-api
+    environment:
+      - DATABASE_URL=postgresql://tunnelflow:${DB_PASSWORD:-tunnelflow}@db:5432/tunnelflow
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - SECRET_KEY=${SECRET_KEY:-change-this-in-production}
+      - DEBUG=${DEBUG:-false}
+      - DOMAIN=${DOMAIN:-localhost}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./tunnelflow:/app
+      - ./logs:/app/logs
     networks:
       - tunnel-network
     labels:
       - "traefik.enable=true"
       
-      # Веб-интерфейс tunnel-server
-      - "traefik.http.routers.tunnel-web.rule=Host(`tunnel.${DOMAIN:-localhost}`)"
-      - "traefik.http.routers.tunnel-web.entrypoints=web"
-      - "traefik.http.routers.tunnel-web.service=tunnel-web"
-      - "traefik.http.services.tunnel-web.loadbalancer.server.port=8082"
+      # API Server
+      - "traefik.http.routers.tunnelflow-api.rule=Host(`api.${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.tunnelflow-api.entrypoints=web"
+      - "traefik.http.services.tunnelflow-api.loadbalancer.server.port=8000"
       
-      # TCP routing для контрольных соединений
-      - "traefik.tcp.routers.tunnel-control.rule=HostSNI(`*`)"
-      - "traefik.tcp.routers.tunnel-control.entrypoints=tunnel-control"
-      - "traefik.tcp.routers.tunnel-control.service=tunnel-control-service"
-      - "traefik.tcp.services.tunnel-control-service.loadbalancer.server.port=8080"
+      # WebSocket endpoint для туннелей
+      - "traefik.http.routers.tunnel-ws.rule=PathPrefix(`/ws/tunnel`)"
+      - "traefik.http.routers.tunnel-ws.entrypoints=web"
+      - "traefik.http.services.tunnel-ws.loadbalancer.server.port=8000"
       
-      # HTTP сервис для проксирования туннелей (будет использоваться динамическими конфигурациями)
-      - "traefik.http.services.tunnel-proxy-service.loadbalancer.server.port=8081"
+      # HTTP proxy для трафика туннелей (catch-all для subdomains)
+      - "traefik.http.routers.tunnel-proxy.rule=HostRegexp(`{subdomain:[a-z0-9-]+}.${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.tunnel-proxy.entrypoints=web"
+      - "traefik.http.services.tunnel-proxy.loadbalancer.server.port=8000"
 
   test-webapp:
     image: nginx:alpine
@@ -82,3 +115,7 @@ services:
 networks:
   tunnel-network:
     driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:

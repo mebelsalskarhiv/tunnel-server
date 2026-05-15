@@ -8,10 +8,10 @@ from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
 
-from ..db.database import get_db
-from ..db.models import User, Invoice, Subscription, Plan
-from ..db.models import InvoiceStatus, SubscriptionStatus
-from ..billing.plans import (
+from tunnelflow.db.database import get_db
+from tunnelflow.db.models import User, Invoice, Subscription, Plan
+from tunnelflow.db.models import InvoiceStatus, SubscriptionStatus
+from tunnelflow.billing.plans import (
     initialize_plans,
     get_user_plan,
     get_user_limits,
@@ -19,7 +19,7 @@ from ..billing.plans import (
     generate_invoice,
     generate_monthly_invoices,
 )
-from ..api.routes.auth import get_current_user
+from tunnelflow.api.routes.auth import get_current_user
 
 router = APIRouter(prefix="/billing", tags=["Billing"])
 
