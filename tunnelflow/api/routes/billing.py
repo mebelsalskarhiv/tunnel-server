@@ -248,4 +248,4 @@ def subscribe_to_plan(
 
 
 # Import PlanType here to avoid circular imports
-from ..db.models import PlanType
+from tunnelflow.db.models import PlanType

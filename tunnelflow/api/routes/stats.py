@@ -80,7 +80,7 @@ def get_tunnel_stats(
 ):
     """Получить статистику конкретного туннеля"""
     # Проверяем, принадлежит ли туннель пользователю
-    from ..db.models import Tunnel
+    from tunnelflow.db.models import Tunnel
     tunnel = db.query(Tunnel).filter(
         Tunnel.id == tunnel_id,
         Tunnel.user_id == current_user.id
